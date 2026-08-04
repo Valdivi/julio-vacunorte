@@ -472,7 +472,7 @@ function showToast(msg,color){
   clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity='0';},2400);
 }
 
-// ============ SUPABASE — DB + Storage (llave de manifiesto exclusiva de julio para no mezclar fotos con otros meses) ============
+// ============ SUPABASE — DB + Storage (key de manifiesto exclusiva de julio para no mezclar fotos con otros meses) ============
 const SB_URL='https://gsxagzjktdovwucbsjho.supabase.co';
 const SB_KEY='sb_publishable_fgcyi7whz-Fmtt1eHXr8mw_WX1lJbOW';
 const BUCKET='informe-vacunorte';
@@ -483,16 +483,16 @@ let manifest={slots:{},texts:{},recs:null};
 
 async function saveManifest(){
   try{
-    const {error}=await getSB().from('informe_data').upsert({llave:DB_KEY, valor:manifest, actualizado_en:new Date().toISOString()},{onConflict:'llave'});
+    const {error}=await getSB().from('informe_data').upsert({key:DB_KEY, value:manifest, updated_at:new Date().toISOString()},{onConflict:'key'});
     if(error){ console.error('saveManifest error',error); showToast('⚠ No se pudo guardar: '+error.message,'#d94f2b'); return false; }
     return true;
   }catch(e){ console.error('saveManifest',e); showToast('⚠ No se pudo guardar: '+e.message,'#d94f2b'); return false; }
 }
 async function loadManifest(){
   try{
-    const {data,error}=await getSB().from('informe_data').select('valor').eq('llave',DB_KEY).single();
+    const {data,error}=await getSB().from('informe_data').select('value').eq('key',DB_KEY).single();
     if(error||!data)return;
-    const saved=data.valor;
+    const saved=data.value;
     if(saved.slots)Object.assign(manifest.slots,saved.slots);
     if(saved.texts)Object.assign(manifest.texts,saved.texts);
     if(saved.recs&&Array.isArray(saved.recs))manifest.recs=saved.recs;
