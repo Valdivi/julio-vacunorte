@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root {
     --blue:#1a56a0;--blue-light:#e8f0fb;--blue-mid:#3575c7;
@@ -471,8 +472,33 @@ function showToast(msg,color){
   clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity='0';},2400);
 }
 
-// ============ PERSISTENT PHOTO STORAGE (window.storage — nativo del artifact, sin dependencias externas) ============
-const REPORT_KEY='vacunorte_julio2026';
+// ============ SUPABASE — DB + Storage (llave de manifiesto exclusiva de julio para no mezclar fotos con otros meses) ============
+const SB_URL='https://gsxagzjktdovwucbsjho.supabase.co';
+const SB_KEY='sb_publishable_fgcyi7whz-Fmtt1eHXr8mw_WX1lJbOW';
+const BUCKET='informe-vacunorte';
+const DB_KEY='manifiesto_v1_julio2026';
+let sbClient=null;
+function getSB(){ if(!sbClient){sbClient=supabase.createClient(SB_URL,SB_KEY);} return sbClient; }
+let manifest={slots:{},texts:{},recs:null};
+
+async function saveManifest(){
+  try{
+    const {error}=await getSB().from('informe_data').upsert({llave:DB_KEY, valor:manifest, actualizado_en:new Date().toISOString()},{onConflict:'llave'});
+    if(error){ console.error('saveManifest error',error); showToast('⚠ No se pudo guardar: '+error.message,'#d94f2b'); return false; }
+    return true;
+  }catch(e){ console.error('saveManifest',e); showToast('⚠ No se pudo guardar: '+e.message,'#d94f2b'); return false; }
+}
+async function loadManifest(){
+  try{
+    const {data,error}=await getSB().from('informe_data').select('valor').eq('llave',DB_KEY).single();
+    if(error||!data)return;
+    const saved=data.valor;
+    if(saved.slots)Object.assign(manifest.slots,saved.slots);
+    if(saved.texts)Object.assign(manifest.texts,saved.texts);
+    if(saved.recs&&Array.isArray(saved.recs))manifest.recs=saved.recs;
+  }catch(e){ console.warn('No manifest yet for julio2026'); }
+}
+
 const grids={'grid-hepatitis':4,'grid-matricula':4,'grid-overview-evidencia':3,'grid-posteos-pautados':4,'grid-posteos-organicos':6,'grid-posteos-tiktok':4};
 
 function resizeImage(file,maxDim){
@@ -487,7 +513,7 @@ function resizeImage(file,maxDim){
       const canvas=document.createElement('canvas');
       canvas.width=w;canvas.height=h;
       canvas.getContext('2d').drawImage(img,0,0,w,h);
-      resolve(canvas.toDataURL('image/jpeg',0.82));
+      canvas.toBlob(blob=>resolve(blob),'image/jpeg',0.82);
     };
     img.onerror=reject;
     reader.onerror=reject;
@@ -524,12 +550,19 @@ function makeSlot(gridId,idx){
   return slot;
 }
 
-function paintSlot(slotId,dataUrl){
+function paintSlot(slotId,url){
   const slot=document.getElementById(slotId);if(!slot)return;
   const ph=slot.querySelector('.slot-placeholder');if(ph)ph.style.display='none';
   let img=slot.querySelector('img.slot-img');
   if(!img){img=document.createElement('img');img.className='slot-img';slot.insertBefore(img,slot.firstChild);}
-  img.src=dataUrl;
+  img.src=url;
+}
+
+async function uploadToSB(blob,path){
+  const {error}=await getSB().storage.from(BUCKET).upload(path,blob,{upsert:true,contentType:'image/jpeg'});
+  if(error)throw error;
+  const {data}=getSB().storage.from(BUCKET).getPublicUrl(path);
+  return data.publicUrl;
 }
 
 async function loadImg(file,gridId,idx){
@@ -538,11 +571,15 @@ async function loadImg(file,gridId,idx){
   const busy=document.createElement('div');busy.className='slot-uploading';busy.textContent='Guardando…';
   slot.appendChild(busy);
   try{
-    const dataUrl=await resizeImage(file,1000);
-    paintSlot(slotId,dataUrl);
-    const result=await window.storage.set(`${REPORT_KEY}:photo:${slotId}`,dataUrl,true);
-    if(!result) throw new Error('No se pudo guardar');
-    showToast('✓ Foto guardada — visible para todo el equipo');
+    const blob=await resizeImage(file,1000);
+    const previewUrl=URL.createObjectURL(blob);
+    paintSlot(slotId,previewUrl);
+    const path='julio2026/'+gridId+'/'+idx+'_'+Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    const url=await uploadToSB(blob,path);
+    paintSlot(slotId,url);
+    manifest.slots[slotId]=url;
+    const ok=await saveManifest();
+    if(ok) showToast('✓ Foto guardada — visible para todo el equipo');
   }catch(e){
     showToast('⚠ No se pudo guardar: '+e.message,'#d94f2b');
     console.error(e);
@@ -558,27 +595,28 @@ async function removeSlotImg(e,gridId,idx){
   const img=slot.querySelector('img.slot-img');if(img)img.remove();
   const ph=slot.querySelector('.slot-placeholder');if(ph)ph.style.display='flex';
   const inp=document.getElementById(`inp-${gridId}-${idx}`);if(inp)inp.value='';
-  try{
-    await window.storage.delete(`${REPORT_KEY}:photo:${slotId}`,true);
+  if(manifest.slots[slotId]){
+    try{
+      const path=manifest.slots[slotId].split('/object/public/'+BUCKET+'/')[1];
+      if(path)await getSB().storage.from(BUCKET).remove([decodeURIComponent(path)]);
+    }catch(err){ /* file may already be gone */ }
+    delete manifest.slots[slotId];
+    await saveManifest();
     showToast('Foto eliminada');
-  }catch(err){ /* key may not exist yet, ignore */ }
+  }
 }
 
-async function initGridsAndRestore(){
+function restoreImages(){
+  Object.entries(manifest.slots).forEach(([slotId,url])=>paintSlot(slotId,url));
+}
+
+function initGrids(){
   Object.entries(grids).forEach(([gridId,count])=>{
     const g=document.getElementById(gridId);if(!g)return;
     for(let i=0;i<count;i++)g.appendChild(makeSlot(gridId,i));
   });
-  for(const [gridId,count] of Object.entries(grids)){
-    for(let i=0;i<count;i++){
-      const slotId=`slot-${gridId}-${i}`;
-      try{
-        const res=await window.storage.get(`${REPORT_KEY}:photo:${slotId}`,true);
-        if(res && res.value) paintSlot(slotId,res.value);
-      }catch(err){ /* no photo saved yet for this slot */ }
-    }
-  }
 }
+
 
 // ============ EDITABLE TEXTS ============
 function initEditableTexts(){
@@ -588,19 +626,18 @@ function initEditableTexts(){
     el.addEventListener('blur',()=>{ saveTextEdit(el.id, el.innerText); });
   });
 }
-async function restoreTextEdits(){
-  document.querySelectorAll('.editable-text[id]').forEach(async el=>{
-    try{
-      const res=await window.storage.get(`${REPORT_KEY}:text:${el.id}`,true);
-      if(res && res.value) el.innerText=res.value;
-    }catch(err){ /* no edit saved yet */ }
-  });
+function restoreTextEdits(){
+  if(manifest.texts){
+    Object.entries(manifest.texts).forEach(([id,val])=>{
+      const el=document.getElementById(id);
+      if(el) el.innerText=val;
+    });
+  }
 }
 async function saveTextEdit(id,val){
-  try{
-    await window.storage.set(`${REPORT_KEY}:text:${id}`,val.trim(),true);
-    showToast('✓ Guardado');
-  }catch(e){ showToast('⚠ No se pudo guardar el texto','#d94f2b'); }
+  manifest.texts[id]=val.trim();
+  const ok=await saveManifest();
+  if(ok) showToast('✓ Guardado');
 }
 
 // ============ CHARTS ============
@@ -617,7 +654,7 @@ function initCharts(){
   if(cRet)new Chart(cRet,{type:'line',data:{labels:['0:00','0:04','0:08','0:12','0:16','0:20','0:31','0:41'],datasets:[{data:[100,40,20,13,10,8,5,3],borderColor:'#3575c7',backgroundColor:'rgba(53,117,199,.12)',fill:true,tension:.35,pointRadius:3}]},options:opts()});
 }
 
-// ============ RECOMENDACIONES (editable, persistidas en window.storage) ============
+// ============ RECOMENDACIONES (editable, persistidas en Supabase) ============
 const TAGS_DEF=[
   {label:'Meta Ads',cls:'tag-meta'},{label:'TikTok',cls:'tag-tiktok'},
   {label:'Estrategia',cls:'tag-estrategia'},{label:'Contenido',cls:'tag-contenido'},{label:'Técnico',cls:'tag-tecnico'}
@@ -676,21 +713,26 @@ document.addEventListener('click',e=>{
     document.getElementById('tag-picker').style.display='none';
 });
 async function saveRecs(){
-  try{ await window.storage.set(`${REPORT_KEY}:recs`,JSON.stringify(recsData),true); showToast('✓ Guardado'); }
-  catch(e){ showToast('⚠ No se pudo guardar','#d94f2b'); }
+  manifest.recs=JSON.parse(JSON.stringify(recsData));
+  const ok=await saveManifest();
+  if(ok) showToast('✓ Guardado');
 }
-async function restoreRecs(){
-  try{
-    const res=await window.storage.get(`${REPORT_KEY}:recs`,true);
-    if(res && res.value) recsData=JSON.parse(res.value);
-  }catch(e){ /* no recs saved yet, use defaults */ }
+function restoreRecsFromManifest(){
+  if(manifest.recs&&Array.isArray(manifest.recs)){
+    recsData.length=0;
+    manifest.recs.forEach(r=>recsData.push(r));
+  }
   renderRecs();
 }
 
 window.addEventListener('DOMContentLoaded',async()=>{
   showToast('⏳ Cargando informe...','#6b7c8d');
   initEditableTexts();
-  await Promise.all([ initGridsAndRestore(), restoreTextEdits(), restoreRecs() ]);
+  initGrids();
+  await loadManifest();
+  restoreImages();
+  restoreTextEdits();
+  restoreRecsFromManifest();
   initCharts();
   showToast('✓ Listo','#0f8c6e');
 });
