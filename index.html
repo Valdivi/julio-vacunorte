@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe de Campañas — Vacunorte Julio 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --blue:#1a56a0;--blue-light:#e8f0fb;--blue-mid:#3575c7;
+    --teal:#0f8c6e;--teal-light:#e0f5ef;
+    --coral:#d94f2b;--coral-light:#fdf0ec;
+    --amber:#c47a12;--amber-light:#fdf3e0;
+    --ink:#0f1923;--ink2:#3a4a58;--ink3:#6b7c8d;
+    --line:#dde4ec;--bg:#f5f7fa;--white:#ffffff;
+    --radius:12px;--shadow:0 2px 16px rgba(15,25,35,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.6;}
+  .page{display:none;min-height:100vh;}
+  .page.active{display:block;}
+
+  .cover{background:var(--ink);min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:3rem 2rem;position:relative;overflow:hidden;}
+  .cover::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(26,86,160,.35) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(15,140,110,.2) 0%,transparent 50%);}
+  .cover-logo{font-weight:600;font-size:13px;letter-spacing:.25em;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:3rem;position:relative;}
+  .cover-logo span{color:var(--blue-mid);}
+  .cover h1{font-weight:700;font-size:clamp(2.2rem,5.5vw,3.6rem);color:white;line-height:1.15;position:relative;margin-bottom:1rem;}
+  .cover h1 em{color:#6ab0f5;font-style:normal;}
+  .cover-sub{font-size:16px;color:rgba(255,255,255,.55);position:relative;margin-bottom:3rem;}
+  .cover-pills{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;position:relative;margin-bottom:3.5rem;}
+  .pill{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.75);border-radius:999px;padding:6px 16px;font-size:13px;}
+  .btn-start{background:var(--blue-mid);color:white;border:none;padding:14px 36px;border-radius:999px;font-size:15px;font-weight:500;cursor:pointer;position:relative;transition:background .2s,transform .15s;font-family:'Poppins',sans-serif;}
+  .btn-start:hover{background:#2a62b0;transform:translateY(-1px);}
+  .cover-prepared{position:absolute;bottom:2rem;font-size:12px;color:rgba(255,255,255,.3);}
+
+  .page-inner{max-width:900px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+  .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;padding-bottom:1.25rem;border-bottom:1px solid var(--line);}
+  .page-header h2{font-size:1.55rem;color:var(--ink);font-weight:700;}
+  .btn-back{display:flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--line);color:var(--ink3);padding:7px 16px;border-radius:999px;font-size:13px;cursor:pointer;transition:border-color .2s,color .2s;font-family:'Poppins',sans-serif;}
+  .btn-back:hover{border-color:var(--blue-mid);color:var(--blue-mid);}
+  .card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.5rem;margin-bottom:1.25rem;}
+  .card-title{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:1rem;}
+  .metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:1.25rem;}
+  .metric{background:var(--bg);border-radius:10px;padding:1rem 1rem .85rem;}
+  .metric-label{font-size:12px;color:var(--ink3);margin-bottom:4px;}
+  .metric-value{font-size:1.6rem;font-weight:600;color:var(--ink);line-height:1;}
+  .metric-sub{font-size:11px;color:var(--ink3);margin-top:3px;}
+  .metric.blue{background:var(--blue-light);} .metric.blue .metric-value{color:var(--blue);}
+  .metric.teal{background:var(--teal-light);} .metric.teal .metric-value{color:var(--teal);}
+  .metric.amber{background:var(--amber-light);} .metric.amber .metric-value{color:var(--amber);}
+  .metric.coral{background:var(--coral-light);} .metric.coral .metric-value{color:var(--coral);}
+  .chart-wrap{position:relative;width:100%;}
+  .section-label{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin:1.75rem 0 .75rem;}
+
+  .camp-row{display:flex;align-items:center;gap:14px;padding:1rem 1.25rem;border-radius:10px;cursor:pointer;border:1.5px solid transparent;transition:border-color .2s,background .2s,transform .15s;margin-bottom:.6rem;background:var(--bg);}
+  .camp-row:hover{border-color:var(--blue-mid);background:var(--blue-light);transform:translateX(3px);}
+  .camp-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
+  .camp-name{font-weight:500;font-size:14px;flex:1;}
+  .camp-meta{font-size:12px;color:var(--ink3);}
+
+  .alert{border-radius:10px;padding:1rem 1.2rem;margin:.75rem 0;border-left:3px solid;}
+  .alert-ok{background:var(--teal-light);border-color:var(--teal);}
+  .alert-warn{background:var(--amber-light);border-color:var(--amber);}
+  .alert-info{background:var(--blue-light);border-color:var(--blue-mid);}
+  .alert-bad{background:var(--coral-light);border-color:var(--coral);}
+  .alert-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+  .alert-ok .alert-title{color:var(--teal);} .alert-warn .alert-title{color:var(--amber);} .alert-info .alert-title{color:var(--blue-mid);} .alert-bad .alert-title{color:var(--coral);}
+  .alert p{font-size:13px;line-height:1.6;color:var(--ink2);}
+  .editable-text{outline:none;border-radius:4px;padding:1px 3px;cursor:text;transition:background .15s;}
+  .editable-text:hover{background:rgba(255,255,255,.5);}
+  .editable-text:focus{background:rgba(255,255,255,.85);box-shadow:0 0 0 2px rgba(53,117,199,.35);}
+
+  .data-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .data-table th{text-align:left;color:var(--ink3);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.07em;padding:7px 10px;border-bottom:1px solid var(--line);}
+  .data-table td{padding:9px 10px;border-bottom:1px solid var(--line);color:var(--ink2);}
+  .data-table tr:last-child td{border-bottom:none;}
+  .data-table tr:hover td{background:var(--bg);}
+  .badge{display:inline-block;font-size:11px;font-weight:500;padding:2px 9px;border-radius:999px;}
+  .badge-ok{background:var(--teal-light);color:var(--teal);}
+  .badge-warn{background:var(--amber-light);color:var(--amber);}
+  .badge-blue{background:var(--blue-light);color:var(--blue-mid);}
+  .badge-bad{background:var(--coral-light);color:var(--coral);}
+
+  .tiktok-banner{background:var(--ink);border-radius:var(--radius);padding:1.75rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;margin-bottom:1.25rem;}
+  .tiktok-icon{font-size:2.5rem;background:linear-gradient(135deg,#ee1d52,#69c9d0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex-shrink:0;}
+  .tiktok-text h3{font-size:1.25rem;color:white;font-weight:700;}
+  .tiktok-text p{font-size:13px;color:rgba(255,255,255,.5);margin-top:3px;}
+  .tiktok-stats{display:flex;gap:1.5rem;flex-wrap:wrap;margin-left:auto;}
+  .tiktok-stat .v{font-size:1.5rem;font-weight:600;color:white;}
+  .tiktok-stat .l{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;}
+
+  .nav-pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--line);}
+  .nav-pill{background:var(--white);border:1px solid var(--line);color:var(--ink2);padding:7px 16px;border-radius:999px;font-size:12px;cursor:pointer;transition:border-color .2s,color .2s,background .2s;font-family:'Poppins',sans-serif;}
+  .nav-pill:hover{border-color:var(--blue-mid);color:var(--blue-mid);background:var(--blue-light);}
+  .nav-pill.active{background:var(--blue-mid);color:white;border-color:var(--blue-mid);}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;font-size:12px;color:var(--ink3);}
+  .legend span{display:flex;align-items:center;gap:5px;}
+  .ld{width:10px;height:10px;border-radius:2px;}
+
+  .invoice{background:var(--ink);border-radius:var(--radius);padding:1.75rem;color:white;}
+  .invoice-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.08);}
+  .invoice-row:last-child{border-bottom:none;}
+  .invoice-row.total{font-size:16px;font-weight:600;padding-top:14px;margin-top:4px;border-top:1px solid rgba(255,255,255,.2);border-bottom:none;}
+  .invoice-row .label{color:rgba(255,255,255,.6);}
+  .invoice-row .amount{color:white;font-weight:500;}
+  .invoice-row.total .amount{color:#6ab0f5;font-size:1.4rem;}
+  .invoice-note{font-size:12px;color:rgba(255,255,255,.4);margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.15);}
+
+  .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-top:.75rem;}
+  .photo-slot{aspect-ratio:4/5;border:2px dashed var(--line);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--ink3);font-size:12px;text-align:center;padding:1rem;background:var(--white);cursor:pointer;position:relative;overflow:hidden;transition:border-color .2s,background .2s;}
+  .photo-slot:hover{border-color:var(--blue-mid);background:var(--blue-light);}
+  .photo-slot.drag-over{border-color:var(--blue-mid);background:var(--blue-light);border-style:solid;}
+  .photo-slot .slot-icon{font-size:28px;pointer-events:none;}
+  .photo-slot .slot-label{pointer-events:none;font-size:11px;color:var(--ink3);}
+  .photo-slot img.slot-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:8px;}
+  .photo-slot .slot-remove{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:white;border:none;border-radius:50%;width:22px;height:22px;font-size:13px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:2;}
+  .photo-slot:hover .slot-remove{display:flex;}
+  .photo-slot input[type=file]{display:none;}
+  .slot-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;}
+  .slot-uploading{position:absolute;inset:0;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--blue-mid);font-weight:600;z-index:3;}
+
+  .rec-item{display:flex;gap:1rem;padding:1.1rem 0;border-bottom:1px solid var(--line);align-items:flex-start;}
+  .rec-item:last-child{border-bottom:none;}
+  .rec-num{width:28px;height:28px;border-radius:50%;background:var(--blue-light);color:var(--blue-mid);font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+  .rec-content{flex:1;}
+  .rec-content h4{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;outline:none;border-radius:4px;padding:2px 4px;min-width:40px;}
+  .rec-content h4:focus{background:var(--blue-light);outline:none;}
+  .rec-content p.rec-text{font-size:13px;color:var(--ink2);line-height:1.55;outline:none;border-radius:4px;padding:2px 4px;min-width:40px;}
+  .rec-content p.rec-text:focus{background:var(--blue-light);outline:none;}
+  .rec-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;align-items:center;}
+  .rec-tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;cursor:pointer;border:1.5px solid transparent;transition:opacity .15s;}
+  .rec-tag:hover{opacity:.75;}
+  .rec-actions{display:flex;gap:6px;flex-shrink:0;margin-top:2px;}
+  .rec-delete{background:transparent;border:1px solid var(--line);color:var(--ink3);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;transition:border-color .2s,color .2s,background .2s;font-family:'Poppins',sans-serif;}
+  .rec-delete:hover{border-color:var(--coral);color:var(--coral);background:var(--coral-light);}
+  .add-tag-btn{font-size:11px;color:var(--blue-mid);cursor:pointer;background:var(--blue-light);border:none;border-radius:4px;padding:2px 8px;font-weight:600;font-family:'Poppins',sans-serif;}
+  .add-tag-btn:hover{background:#d0e4f8;}
+  .add-rec-btn{display:flex;align-items:center;gap:8px;background:transparent;border:1.5px dashed var(--line);color:var(--blue-mid);padding:.85rem 1.25rem;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;width:100%;justify-content:center;margin-top:.75rem;transition:border-color .2s,background .2s;font-family:'Poppins',sans-serif;}
+  .add-rec-btn:hover{border-color:var(--blue-mid);background:var(--blue-light);}
+  .tag-picker{position:absolute;background:white;border:1px solid var(--line);border-radius:10px;padding:.75rem;box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:100;display:flex;flex-direction:column;gap:6px;min-width:180px;}
+  .tag-picker-item{padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:opacity .15s;}
+  .tag-picker-item:hover{opacity:.8;}
+  .tag-meta{background:#e0e8f7;color:#1a56a0;}
+  .tag-tiktok{background:#ffe8f0;color:#c0145a;}
+  .tag-estrategia{background:#e0f5ef;color:#0f6e56;}
+  .tag-contenido{background:#fdf3e0;color:#a06010;}
+  .tag-tecnico{background:#f0e8ff;color:#5e35b1;}
+
+  .edit-hint{font-size:11px;color:var(--ink3);margin-bottom:.75rem;display:flex;align-items:center;gap:5px;}
+
+  @media(max-width:600px){
+    .page-header{flex-direction:column;align-items:flex-start;gap:10px;}
+    .tiktok-banner{flex-direction:column;}
+    .tiktok-stats{margin-left:0;}
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="page active" id="page-cover">
+  <div class="cover">
+    <div class="cover-logo"><span>Vacunorte</span> · Informe de Redes y Campañas</div>
+    <h1>Resultados de <em>Campañas ADS</em><br>y Presencia Digital</h1>
+    <p class="cover-sub">Período: 4 julio — 2 agosto 2026 · Meta Ads + TikTok + Facebook + Instagram orgánico</p>
+    <div class="cover-pills">
+      <div class="pill">📢 2 campañas Meta Ads</div>
+      <div class="pill">💰 $95.08 con IVA de $120</div>
+      <div class="pill">🎵 TikTok en caída de interacción</div>
+      <div class="pill">🩺 Contenido con personal real conecta mejor</div>
+    </div>
+    <button class="btn-start" onclick="goTo('page-overview')">Ver informe completo →</button>
+    <div class="cover-prepared">Preparado por Sarahí Curay · Community Manager &amp; Ads Manager</div>
+  </div>
+</div>
+
+<!-- OVERVIEW -->
+<div class="page" id="page-overview">
+  <div class="page-inner">
+    <div class="page-header">
+      <h2>Resumen General</h2>
+      <button class="btn-back" onclick="goTo('page-cover')">← Portada</button>
+    </div>
+    <p class="edit-hint">✏️ Los textos dentro de los recuadros de color son editables — haz clic y escribe, se guarda solo</p>
+
+    <div class="metrics-grid">
+      <div class="metric blue"><div class="metric-label">Resultados totales</div><div class="metric-value">141</div><div class="metric-sub">conversaciones de WhatsApp</div></div>
+      <div class="metric amber"><div class="metric-label">Invertido (sin IVA)</div><div class="metric-value">$82.68</div><div class="metric-sub">subtotal neto</div></div>
+      <div class="metric coral"><div class="metric-label">Total con IVA (15%)</div><div class="metric-value">$95.08</div><div class="metric-sub">de $120 disponibles (79%)</div></div>
+      <div class="metric teal"><div class="metric-label">Costo prom. por resultado</div><div class="metric-value">$0.59</div><div class="metric-sub">el más bajo registrado — ver abajo</div></div>
+      <div class="metric blue"><div class="metric-label">Seguidores netos</div><div class="metric-value">+56</div><div class="metric-sub">FB +16 · IG +23 · TikTok +17</div></div>
+    </div>
+
+    <div class="alert alert-bad">
+      <div class="alert-title editable-text" id="et-title-1">🔻 Lo que no está bien y hay que decirlo</div>
+      <p class="editable-text" id="et-text-1">TikTok se enfrió fuerte este mes: visualizaciones -35.8%, comentarios -91.7%, compartidos -77.7% — mientras seguíamos ganando seguidores (todo esto es 100% orgánico, no hay pauta paga en TikTok). La gente nos sigue pero interactúa mucho menos con lo nuevo. Además, el reel con nuestra enfermera solo retiene al público 5 segundos de 41 (7.68%) porque arranca con un plano estático.</p>
+    </div>
+    <div class="alert alert-ok">
+      <div class="alert-title editable-text" id="et-title-2">✓ Lo que sí está funcionando</div>
+      <p class="editable-text" id="et-text-2">El contenido de Hepatitis es nuestro tema más fuerte — 461 y 411 vistas orgánicas en TikTok en solo 7 días, más que cualquier pieza pagada del mes. El formato con personal real (enfermera en sucursal, sin stock photos) conecta mucho mejor que el contenido genérico. Y el ángulo de "carnet de vacunas + matrícula" tuvo el mejor CTR pagado del mes (0.90%), probando que el contenido utilitario con fecha límite convierte mejor que el emocional.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Campañas — haz clic para ver detalle</div>
+      <div class="camp-row" onclick="goTo('page-hepatitis')">
+        <div class="camp-dot" style="background:#3575c7"></div>
+        <div class="camp-name">Reel Hepatitis — con enfermera en sucursal</div>
+        <div class="camp-meta">87 resultados · $0.51 c/u</div>
+      </div>
+      <div class="camp-row" onclick="goTo('page-matricula')">
+        <div class="camp-dot" style="background:#0f8c6e"></div>
+        <div class="camp-name">Post estático — Matrícula / carnet de vacunas</div>
+        <div class="camp-meta">54 resultados · $0.71 c/u</div>
+      </div>
+    </div>
+
+    <div class="alert alert-info">
+      <div class="alert-title editable-text" id="et-title-10">📉 El costo por resultado más bajo que hemos tenido</div>
+      <p class="editable-text" id="et-text-10">Nunca habíamos pagado tan poco por cada conversación de WhatsApp. Comparado mes a mes:</p>
+      <table class="data-table" style="margin-top:.6rem">
+        <thead><tr><th>Mes</th><th style="text-align:right">Costo por resultado</th></tr></thead>
+        <tbody>
+          <tr><td>Mayo</td><td style="text-align:right">$1.46 – $7.63 según sucursal</td></tr>
+          <tr><td>Junio</td><td style="text-align:right">$1.94 promedio</td></tr>
+          <tr><td>Julio</td><td style="text-align:right"><strong style="color:var(--teal)">$0.59 promedio</strong></td></tr>
+        </tbody>
+      </table>
+      <p class="editable-text" id="et-text-11" style="margin-top:.6rem">¿Por qué bajó tanto? Tres factores se juntaron: (1) el formato reel con personal real de Vacunorte tiene mejor calidad de anuncio que las piezas anteriores, (2) la segmentación en mujeres 25-54 ya está afinada y se repite con buenos resultados mes a mes, y (3) corregir el número de WhatsApp de destino a mitad de la campaña de Hepatitis eliminó fricción en el embudo.</p>
+    </div>
+
+    <p class="section-label">Evidencia — capturas de Ads Manager (Facebook)</p>
+    <div class="photo-grid" id="grid-overview-evidencia"></div>
+
+    <p class="section-label">Resumen de inversión</p>
+    <div class="invoice">
+      <div class="invoice-row"><span class="label">Reel Hepatitis (tramo 1, antes de corregir el número)</span><span class="amount">$17.27</span></div>
+      <div class="invoice-row"><span class="label">Reel Hepatitis (tramo 2, número corregido)</span><span class="amount">$27.11</span></div>
+      <div class="invoice-row"><span class="label">Post estático matrícula / carnet de vacunas</span><span class="amount">$38.30</span></div>
+      <div class="invoice-row"><span class="label">Subtotal (sin IVA)</span><span class="amount">$82.68</span></div>
+      <div class="invoice-row"><span class="label">IVA 15% (Ecuador)</span><span class="amount">$12.40</span></div>
+      <div class="invoice-row total"><span class="label">Total con IVA</span><span class="amount">$95.08</span></div>
+      <div class="invoice-note">Presupuesto mensual asignado: $120,00 incl. IVA · Ejecutado: $95,08 (79%) · Disponible sin usar: $24,92</div>
+    </div>
+
+    <div class="nav-pills">
+      <button class="nav-pill" onclick="goTo('page-hepatitis')">Reel Hepatitis</button>
+      <button class="nav-pill" onclick="goTo('page-matricula')">Matrícula</button>
+      <button class="nav-pill" onclick="goTo('page-redes')">Redes Sociales</button>
+      <button class="nav-pill" onclick="goTo('page-fotos')">Posteos</button>
+      <button class="nav-pill" onclick="goTo('page-recs')">Recomendaciones</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEPATITIS -->
+<div class="page" id="page-hepatitis">
+  <div class="page-inner">
+    <div class="page-header">
+      <h2>Reel Hepatitis — con enfermera en sucursal</h2>
+      <button class="btn-back" onclick="goTo('page-overview')">← Resumen general</button>
+    </div>
+    <div class="alert alert-info"><div class="alert-title editable-text" id="et-title-3">🎯 Objetivo de campaña</div><p class="editable-text" id="et-text-3">Generar conversaciones de WhatsApp sobre la vacuna de Hepatitis con un reel protagonizado por personal de Vacunorte, con foco en todas las sucursales.</p></div>
+    <div class="metrics-grid">
+      <div class="metric teal"><div class="metric-label">Resultados totales</div><div class="metric-value">87</div><div class="metric-sub">25 + 62 (dos tramos)</div></div>
+      <div class="metric blue"><div class="metric-label">Alcance</div><div class="metric-value">11,798</div></div>
+      <div class="metric amber"><div class="metric-label">Costo por resultado</div><div class="metric-value">$0.44</div><div class="metric-sub">tramo 2, número corregido</div></div>
+      <div class="metric amber"><div class="metric-label">Gasto total</div><div class="metric-value">$44.38</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Tramo 1 vs. Tramo 2 (corrección del número de WhatsApp)</div>
+      <div class="legend">
+        <span><span class="ld" style="background:#d94f2b"></span>Tramo 1 — número sin corregir</span>
+        <span><span class="ld" style="background:#0f8c6e"></span>Tramo 2 — número corregido</span>
+      </div>
+      <div class="chart-wrap" style="height:200px"><canvas id="c-tramos" role="img" aria-label="Comparación de tramos">Tramo 1: 25 resultados a $0.69. Tramo 2: 62 resultados a $0.44.</canvas></div>
+      <table class="data-table" style="margin-top:1rem">
+        <thead><tr><th></th><th style="text-align:right">Resultados</th><th style="text-align:right">Costo/resultado</th><th style="text-align:right">CTR</th></tr></thead>
+        <tbody>
+          <tr><td>Tramo 1</td><td style="text-align:right">25</td><td style="text-align:right"><span class="badge badge-warn">$0.69</span></td><td style="text-align:right">0.43%</td></tr>
+          <tr><td>Tramo 2</td><td style="text-align:right">62</td><td style="text-align:right"><span class="badge badge-ok">$0.44</span></td><td style="text-align:right">0.53%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Retención de video — el punto débil</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="c-retention" role="img" aria-label="Retención de video">Cae de 100% a 40% en los primeros 4 segundos.</canvas></div>
+      <div style="margin-top:.75rem;font-size:13px;color:var(--ink2)"><strong>Tasa de captura inicial: 33%</strong> · <strong>Retención promedio: 7.68%</strong> · Tiempo promedio de visualización: 5 segundos de 41.</div>
+    </div>
+
+    <div class="alert alert-bad"><div class="alert-title editable-text" id="et-title-4">🔻 Por qué se pierde a la audiencia</div><p class="editable-text" id="et-text-4">El video arranca con la enfermera parada, quieta, frente a la fachada de la sucursal — sin gancho en los primeros segundos.</p></div>
+
+    <p class="section-label">Evidencia — capturas de Ads Manager</p>
+    <div class="photo-grid" id="grid-hepatitis"></div>
+
+    <div class="nav-pills">
+      <button class="nav-pill active">Reel Hepatitis</button>
+      <button class="nav-pill" onclick="goTo('page-matricula')">Matrícula</button>
+      <button class="nav-pill" onclick="goTo('page-redes')">Redes Sociales</button>
+      <button class="nav-pill" onclick="goTo('page-fotos')">Posteos</button>
+      <button class="nav-pill" onclick="goTo('page-recs')">Recomendaciones</button>
+    </div>
+  </div>
+</div>
+
+<!-- MATRICULA -->
+<div class="page" id="page-matricula">
+  <div class="page-inner">
+    <div class="page-header">
+      <h2>Post Estático — Matrícula / Carnet de Vacunas</h2>
+      <button class="btn-back" onclick="goTo('page-overview')">← Resumen general</button>
+    </div>
+    <div class="alert alert-info"><div class="alert-title editable-text" id="et-title-6">🎯 Objetivo de campaña</div><p class="editable-text" id="et-text-6">Aprovechar el periodo de matrículas escolares (régimen Sierra) para generar conversaciones sobre carnet de vacunas, en las sucursales Quito N/S, Ambato, Riobamba, Ibarra y Sangolquí.</p></div>
+    <div class="metrics-grid">
+      <div class="metric teal"><div class="metric-label">Resultados</div><div class="metric-value">54</div></div>
+      <div class="metric blue"><div class="metric-label">Alcance</div><div class="metric-value">10,527</div></div>
+      <div class="metric amber"><div class="metric-label">Costo por resultado</div><div class="metric-value">$0.71</div></div>
+      <div class="metric amber"><div class="metric-label">Gasto total</div><div class="metric-value">$38.30</div></div>
+      <div class="metric coral"><div class="metric-label">CTR (enlace)</div><div class="metric-value">0.90%</div><div class="metric-sub">el más alto del mes</div></div>
+      <div class="metric blue"><div class="metric-label">Frecuencia</div><div class="metric-value">1.85</div><div class="metric-sub">vigilar saturación</div></div>
+    </div>
+
+    <div class="alert alert-ok"><div class="alert-title editable-text" id="et-title-7">✓ El mejor CTR del mes, pero más caro por resultado</div><p class="editable-text" id="et-text-7">Este post ganó en clics (0.90% vs 0.53% del reel) porque ataca un dolor puntual y urgente: la fecha límite de matrícula. Pero salió más caro por conversación ($0.71 vs $0.44) — probablemente porque un post estático genera más curiosidad de clic que compromiso real de escribir. 96% de las conversaciones vinieron de mujeres — el perfil "Mamá Decisora" en estado puro.</p></div>
+    <div class="alert alert-warn"><div class="alert-title editable-text" id="et-title-8">⚠️ Ojo con la frecuencia</div><p class="editable-text" id="et-text-8">1.85 de frecuencia sobre un alcance de solo 10,527 personas — el público es chico y se satura rápido. Si se repite este ángulo, hay que ampliar la audiencia o rotar la creatividad.</p></div>
+
+    <p class="section-label">Evidencia — capturas de Ads Manager</p>
+    <div class="photo-grid" id="grid-matricula"></div>
+
+    <div class="nav-pills">
+      <button class="nav-pill" onclick="goTo('page-hepatitis')">Reel Hepatitis</button>
+      <button class="nav-pill active">Matrícula</button>
+      <button class="nav-pill" onclick="goTo('page-redes')">Redes Sociales</button>
+      <button class="nav-pill" onclick="goTo('page-fotos')">Posteos</button>
+      <button class="nav-pill" onclick="goTo('page-recs')">Recomendaciones</button>
+    </div>
+  </div>
+</div>
+
+<!-- REDES -->
+<div class="page" id="page-redes">
+  <div class="page-inner">
+    <div class="page-header">
+      <h2>Redes Sociales (29 jun – 2 ago)</h2>
+      <button class="btn-back" onclick="goTo('page-overview')">← Resumen general</button>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>Red</th><th>Seguidores</th><th>Alcance / Visualizaciones</th><th>Interacción</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Facebook</strong></td><td>2,300 total<br><span class="badge badge-ok">+16 netos (+60%)</span></td><td>34,497 visualizaciones (+8%)</td><td>1,003 (+80%) · 4 conv. WA (+300%)</td></tr>
+        <tr><td><strong>Instagram</strong></td><td><span class="badge badge-ok">+23 netos</span></td><td>15,077 visualizaciones · 7,631 cuentas alcanzadas</td><td>58 interacciones · 18 clics en enlace</td></tr>
+        <tr><td><strong>TikTok</strong></td><td>381 total<br><span class="badge badge-ok">+17 a +18 netos</span></td><td><span class="badge badge-bad">7.8K (-35.8%)</span></td><td><span class="badge badge-bad">116 me gusta (-48.7%)</span> · 41 compartidos (-77.7%)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="tiktok-banner">
+      <div class="tiktok-icon">🎵</div>
+      <div class="tiktok-text">
+        <h3>TikTok — interacción en caída, 100% orgánico</h3>
+        <p>No hay campañas pagadas en TikTok este mes — toda la caída es sobre contenido 100% orgánico. Comentarios: -91.7% · Visualizaciones: -35.8% · vale la pena investigar frecuencia y formato</p>
+      </div>
+      <div class="tiktok-stats">
+        <div class="tiktok-stat"><div class="v">381</div><div class="l">seguidores</div></div>
+        <div class="tiktok-stat"><div class="v">7.8K</div><div class="l">visualizaciones</div></div>
+        <div class="tiktok-stat"><div class="v">1</div><div class="l">comentario en el mes</div></div>
+      </div>
+    </div>
+    <div class="alert alert-warn"><div class="alert-title editable-text" id="et-title-12">⚠️ Importante: sin inversión en TikTok</div><p class="editable-text" id="et-text-12">Todo el presupuesto de pauta de julio ($95.08 con IVA) se invirtió en Meta Ads (Facebook/Instagram). TikTok no recibió ni un dólar de pauta — su crecimiento y su caída son resultado exclusivo del contenido orgánico, no de un problema de presupuesto. Si se quiere revertir la caída de interacción, la palanca es contenido y frecuencia, no gasto.</p></div>
+
+    <div class="card">
+      <div class="card-title">Top contenido del mes (TikTok, últimos 7 días)</div>
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Publicación</th><th style="text-align:right">Vistas</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Hepatitis B — infección silenciosa</td><td style="text-align:right"><strong>461</strong></td></tr>
+          <tr><td>2</td><td>Hepatitis A — 881 casos en Ecuador</td><td style="text-align:right"><strong>411</strong></td></tr>
+          <tr><td>3</td><td>Ingreso Policía/FF.AA. (publicado 14 may — sigue vivo)</td><td style="text-align:right"><strong>241</strong></td></tr>
+          <tr><td>4</td><td>VPH</td><td style="text-align:right"><strong>200</strong></td></tr>
+          <tr><td>5</td><td>Reel Hepatitis — enfermera en sucursal ("gustito en la calle")</td><td style="text-align:right"><strong>156</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert alert-info"><div class="alert-title editable-text" id="et-title-9">🔎 Dato interesante</div><p class="editable-text" id="et-text-9">El video de Hepatitis con enfermera en sucursal fue el contenido pagado con más tracción del mes, y el ángulo de contenido educativo (Hepatitis B/A) superó en vistas a cualquier pieza con pauta — el contenido de valor sigue siendo el motor orgánico más fuerte de la cuenta.</p></div>
+
+    <div class="nav-pills">
+      <button class="nav-pill" onclick="goTo('page-hepatitis')">Reel Hepatitis</button>
+      <button class="nav-pill" onclick="goTo('page-matricula')">Matrícula</button>
+      <button class="nav-pill active">Redes Sociales</button>
+      <button class="nav-pill" onclick="goTo('page-fotos')">Posteos</button>
+      <button class="nav-pill" onclick="goTo('page-recs')">Recomendaciones</button>
+    </div>
+  </div>
+</div>
+
+<!-- POSTEOS Y ARTES DEL MES -->
+<div class="page" id="page-fotos">
+  <div class="page-inner">
+    <div class="page-header">
+      <h2>Posteos y Artes del Mes</h2>
+      <button class="btn-back" onclick="goTo('page-overview')">← Resumen general</button>
+    </div>
+    <p class="edit-hint">📷 Haz clic o arrastra una imagen a cualquier recuadro — se guarda automáticamente y queda visible para todo el equipo, sin importar quién abra este informe después.</p>
+
+    <p class="section-label">Facebook / Instagram — posts pautados</p>
+    <div class="photo-grid" id="grid-posteos-pautados"></div>
+
+    <p class="section-label" style="margin-top:1.5rem">Facebook / Instagram — posts orgánicos</p>
+    <div class="photo-grid" id="grid-posteos-organicos"></div>
+
+    <p class="section-label" style="margin-top:1.5rem">TikTok — videos publicados</p>
+    <div class="photo-grid" id="grid-posteos-tiktok"></div>
+
+    <div class="nav-pills">
+      <button class="nav-pill" onclick="goTo('page-hepatitis')">Reel Hepatitis</button>
+      <button class="nav-pill" onclick="goTo('page-matricula')">Matrícula</button>
+      <button class="nav-pill" onclick="goTo('page-redes')">Redes Sociales</button>
+      <button class="nav-pill active">Posteos</button>
+      <button class="nav-pill" onclick="goTo('page-recs')">Recomendaciones</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECOMENDACIONES -->
+<div class="page" id="page-recs">
+  <div class="page-inner">
+    <div class="page-header">
+      <h2>Recomendaciones</h2>
+      <button class="btn-back" onclick="goTo('page-overview')">← Resumen general</button>
+    </div>
+    <p class="edit-hint">✏️ Haz clic en cualquier texto para editarlo · Usa los botones para agregar etiquetas o eliminar recomendaciones</p>
+    <div class="card" id="recs-container"></div>
+
+    <div class="nav-pills">
+      <button class="nav-pill" onclick="goTo('page-hepatitis')">Reel Hepatitis</button>
+      <button class="nav-pill" onclick="goTo('page-matricula')">Matrícula</button>
+      <button class="nav-pill" onclick="goTo('page-redes')">Redes Sociales</button>
+      <button class="nav-pill" onclick="goTo('page-fotos')">Posteos</button>
+      <button class="nav-pill active">Recomendaciones</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAG PICKER POPUP -->
+<div id="tag-picker" class="tag-picker" style="display:none">
+  <div class="tag-picker-item tag-meta" onclick="addTag('Meta Ads','tag-meta')">Meta Ads</div>
+  <div class="tag-picker-item tag-tiktok" onclick="addTag('TikTok','tag-tiktok')">TikTok</div>
+  <div class="tag-picker-item tag-estrategia" onclick="addTag('Estrategia','tag-estrategia')">Estrategia</div>
+  <div class="tag-picker-item tag-contenido" onclick="addTag('Contenido','tag-contenido')">Contenido</div>
+  <div class="tag-picker-item tag-tecnico" onclick="addTag('Técnico','tag-tecnico')">Técnico</div>
+</div>
+
+<script>
+function goTo(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ============ TOAST ============
+function showToast(msg,color){
+  let t=document.getElementById('toast');
+  if(!t){
+    t=document.createElement('div');t.id='toast';
+    t.style.cssText='position:fixed;bottom:24px;right:24px;color:white;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;font-family:Poppins,sans-serif;';
+    document.body.appendChild(t);
+  }
+  t.style.background=color||'#0f8c6e';
+  t.textContent=msg;t.style.opacity='1';
+  clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity='0';},2400);
+}
+
+// ============ PERSISTENT PHOTO STORAGE (window.storage — nativo del artifact, sin dependencias externas) ============
+const REPORT_KEY='vacunorte_julio2026';
+const grids={'grid-hepatitis':4,'grid-matricula':4,'grid-overview-evidencia':3,'grid-posteos-pautados':4,'grid-posteos-organicos':6,'grid-posteos-tiktok':4};
+
+function resizeImage(file,maxDim){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    const reader=new FileReader();
+    reader.onload=ev=>{ img.src=ev.target.result; };
+    img.onload=()=>{
+      let w=img.width,h=img.height;
+      if(w>h){ if(w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;} }
+      else{ if(h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;} }
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(canvas.toDataURL('image/jpeg',0.82));
+    };
+    img.onerror=reject;
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function makeSlot(gridId,idx){
+  const slot=document.createElement('div');
+  slot.className='photo-slot';
+  const slotId=`slot-${gridId}-${idx}`;
+  slot.id=slotId;
+  slot.innerHTML=`
+    <input type="file" accept="image/*" id="inp-${gridId}-${idx}">
+    <button class="slot-remove" onclick="removeSlotImg(event,'${gridId}',${idx})">×</button>
+    <div class="slot-placeholder">
+      <span class="slot-icon">🖼</span>
+      <span class="slot-label">Haz clic o arrastra una imagen</span>
+    </div>`;
+  slot.addEventListener('click',e=>{
+    if(e.target.classList.contains('slot-remove'))return;
+    document.getElementById(`inp-${gridId}-${idx}`).click();
+  });
+  slot.addEventListener('dragover',e=>{e.preventDefault();slot.classList.add('drag-over');});
+  slot.addEventListener('dragleave',()=>slot.classList.remove('drag-over'));
+  slot.addEventListener('drop',e=>{
+    e.preventDefault();slot.classList.remove('drag-over');
+    const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))loadImg(f,gridId,idx);
+  });
+  const inp=slot.querySelector('input[type=file]');
+  inp.addEventListener('change',e=>{
+    const f=e.target.files[0];if(f)loadImg(f,gridId,idx);
+  });
+  return slot;
+}
+
+function paintSlot(slotId,dataUrl){
+  const slot=document.getElementById(slotId);if(!slot)return;
+  const ph=slot.querySelector('.slot-placeholder');if(ph)ph.style.display='none';
+  let img=slot.querySelector('img.slot-img');
+  if(!img){img=document.createElement('img');img.className='slot-img';slot.insertBefore(img,slot.firstChild);}
+  img.src=dataUrl;
+}
+
+async function loadImg(file,gridId,idx){
+  const slotId=`slot-${gridId}-${idx}`;
+  const slot=document.getElementById(slotId);
+  const busy=document.createElement('div');busy.className='slot-uploading';busy.textContent='Guardando…';
+  slot.appendChild(busy);
+  try{
+    const dataUrl=await resizeImage(file,1000);
+    paintSlot(slotId,dataUrl);
+    const result=await window.storage.set(`${REPORT_KEY}:photo:${slotId}`,dataUrl,true);
+    if(!result) throw new Error('No se pudo guardar');
+    showToast('✓ Foto guardada — visible para todo el equipo');
+  }catch(e){
+    showToast('⚠ No se pudo guardar: '+e.message,'#d94f2b');
+    console.error(e);
+  }finally{
+    busy.remove();
+  }
+}
+
+async function removeSlotImg(e,gridId,idx){
+  e.stopPropagation();
+  const slotId=`slot-${gridId}-${idx}`;
+  const slot=document.getElementById(slotId);
+  const img=slot.querySelector('img.slot-img');if(img)img.remove();
+  const ph=slot.querySelector('.slot-placeholder');if(ph)ph.style.display='flex';
+  const inp=document.getElementById(`inp-${gridId}-${idx}`);if(inp)inp.value='';
+  try{
+    await window.storage.delete(`${REPORT_KEY}:photo:${slotId}`,true);
+    showToast('Foto eliminada');
+  }catch(err){ /* key may not exist yet, ignore */ }
+}
+
+async function initGridsAndRestore(){
+  Object.entries(grids).forEach(([gridId,count])=>{
+    const g=document.getElementById(gridId);if(!g)return;
+    for(let i=0;i<count;i++)g.appendChild(makeSlot(gridId,i));
+  });
+  for(const [gridId,count] of Object.entries(grids)){
+    for(let i=0;i<count;i++){
+      const slotId=`slot-${gridId}-${i}`;
+      try{
+        const res=await window.storage.get(`${REPORT_KEY}:photo:${slotId}`,true);
+        if(res && res.value) paintSlot(slotId,res.value);
+      }catch(err){ /* no photo saved yet for this slot */ }
+    }
+  }
+}
+
+// ============ EDITABLE TEXTS ============
+function initEditableTexts(){
+  document.querySelectorAll('.editable-text[id]').forEach(el=>{
+    el.setAttribute('contenteditable','true');
+    el.setAttribute('spellcheck','false');
+    el.addEventListener('blur',()=>{ saveTextEdit(el.id, el.innerText); });
+  });
+}
+async function restoreTextEdits(){
+  document.querySelectorAll('.editable-text[id]').forEach(async el=>{
+    try{
+      const res=await window.storage.get(`${REPORT_KEY}:text:${el.id}`,true);
+      if(res && res.value) el.innerText=res.value;
+    }catch(err){ /* no edit saved yet */ }
+  });
+}
+async function saveTextEdit(id,val){
+  try{
+    await window.storage.set(`${REPORT_KEY}:text:${id}`,val.trim(),true);
+    showToast('✓ Guardado');
+  }catch(e){ showToast('⚠ No se pudo guardar el texto','#d94f2b'); }
+}
+
+// ============ CHARTS ============
+function initCharts(){
+  const opts=(extra={})=>({
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{x:{ticks:{font:{size:11,family:'Poppins'},maxRotation:0},grid:{display:false}},y:{ticks:{font:{size:11,family:'Poppins'}},grid:{color:'rgba(0,0,0,.06)'}}},
+    ...extra
+  });
+  const cTramos=document.getElementById('c-tramos');
+  if(cTramos)new Chart(cTramos,{type:'bar',data:{labels:['Tramo 1 (25 result.)','Tramo 2 (62 result.)'],datasets:[{label:'Costo por resultado (USD)',data:[0.69,0.44],backgroundColor:['#d94f2b','#0f8c6e'],borderRadius:5,borderSkipped:false}]},options:opts()});
+  const cRet=document.getElementById('c-retention');
+  if(cRet)new Chart(cRet,{type:'line',data:{labels:['0:00','0:04','0:08','0:12','0:16','0:20','0:31','0:41'],datasets:[{data:[100,40,20,13,10,8,5,3],borderColor:'#3575c7',backgroundColor:'rgba(53,117,199,.12)',fill:true,tension:.35,pointRadius:3}]},options:opts()});
+}
+
+// ============ RECOMENDACIONES (editable, persistidas en window.storage) ============
+const TAGS_DEF=[
+  {label:'Meta Ads',cls:'tag-meta'},{label:'TikTok',cls:'tag-tiktok'},
+  {label:'Estrategia',cls:'tag-estrategia'},{label:'Contenido',cls:'tag-contenido'},{label:'Técnico',cls:'tag-tecnico'}
+];
+let recsData=[
+  {title:'Corregir el gancho de los primeros 3 segundos en todos los reels',text:'La retención de video sigue siendo baja (7.68% este mes) porque los reels arrancan con un plano estático en vez de una acción o pregunta. Es el cambio de mayor impacto y menor costo disponible para agosto.',tags:['Contenido']},
+  {title:'Investigar en serio la caída de interacción en TikTok',text:'-91.7% en comentarios no es ruido estadístico, y no hubo pauta paga en TikTok este mes — es 100% orgánico. Revisar frecuencia de publicación real vs. la planificada, y si el contenido reciente perdió el formato que funcionaba (testimonio real / BTS).',tags:['TikTok']},
+  {title:'Usar el presupuesto completo',text:'21% del presupuesto mensual ($24.92 con IVA) quedó sin usar. Con el aprendizaje de este mes (reel para captar barato, estático para CTR alto), hay margen para una tercera campaña sin exceder el tope de $120.',tags:['Meta Ads']},
+  {title:'Seguir construyendo contenido con personal real de Vacunorte',text:'El formato con enfermeras y personal real en sucursal supera consistentemente al contenido genérico o con stock photos. Vale la pena un plan de contenido específico alrededor de las caras reales del equipo, no solo apariciones puntuales.',tags:['Estrategia']},
+  {title:'Sistematizar la exportación de reportes de Ads Manager',text:'Tomó varios intentos exportar el archivo completo por filtros mal puestos y nivel equivocado. Vale la pena documentar el paso a paso una sola vez (nivel "Anuncios", sin filtros de campaña, columnas fijas) para que cualquiera lo repita sin errores.',tags:['Técnico']}
+];
+let currentTagTarget=null;
+function renderRecs(){
+  const c=document.getElementById('recs-container');c.innerHTML='';
+  recsData.forEach((rec,i)=>{
+    const div=document.createElement('div');div.className='rec-item';div.setAttribute('data-idx',i);
+    const tagsHtml=rec.tags.map(t=>{
+      const cls=TAGS_DEF.find(d=>d.label===t)?.cls||'tag-meta';
+      return `<span class="rec-tag ${cls}" onclick="removeTag(${i},'${t}')" title="Clic para quitar">${t}</span>`;
+    }).join('');
+    div.innerHTML=`
+      <div class="rec-num">${i+1}</div>
+      <div class="rec-content">
+        <h4 contenteditable="true" spellcheck="false" onblur="saveRec(${i},'title',this.innerText)">${rec.title}</h4>
+        <p class="rec-text" contenteditable="true" spellcheck="false" onblur="saveRec(${i},'text',this.innerText)">${rec.text}</p>
+        <div class="rec-tags">${tagsHtml}<button class="add-tag-btn" onclick="openTagPicker(event,${i})">+ etiqueta</button></div>
+      </div>
+      <div class="rec-actions"><button class="rec-delete" onclick="deleteRec(${i})">✕ Eliminar</button></div>`;
+    c.appendChild(div);
+  });
+  const addBtn=document.createElement('button');
+  addBtn.className='add-rec-btn';addBtn.innerHTML='＋ Agregar recomendación';
+  addBtn.onclick=()=>{recsData.push({title:'Nueva recomendación',text:'Describe la acción recomendada aquí...',tags:[]});renderRecs();saveRecs();};
+  c.appendChild(addBtn);
+}
+function saveRec(i,field,val){recsData[i][field]=val.trim();saveRecs();}
+function deleteRec(i){recsData.splice(i,1);renderRecs();saveRecs();}
+function removeTag(i,tag){recsData[i].tags=recsData[i].tags.filter(t=>t!==tag);renderRecs();saveRecs();}
+function openTagPicker(e,i){
+  e.stopPropagation();
+  currentTagTarget=i;
+  const picker=document.getElementById('tag-picker');
+  const r=e.target.getBoundingClientRect();
+  picker.style.top=(r.bottom+window.scrollY+4)+'px';
+  picker.style.left=r.left+'px';
+  picker.style.display='flex';picker.style.flexDirection='column';
+}
+function addTag(label,cls){
+  if(currentTagTarget===null)return;
+  if(!recsData[currentTagTarget].tags.includes(label))recsData[currentTagTarget].tags.push(label);
+  document.getElementById('tag-picker').style.display='none';
+  renderRecs();saveRecs();
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#tag-picker')&&!e.target.classList.contains('add-tag-btn'))
+    document.getElementById('tag-picker').style.display='none';
+});
+async function saveRecs(){
+  try{ await window.storage.set(`${REPORT_KEY}:recs`,JSON.stringify(recsData),true); showToast('✓ Guardado'); }
+  catch(e){ showToast('⚠ No se pudo guardar','#d94f2b'); }
+}
+async function restoreRecs(){
+  try{
+    const res=await window.storage.get(`${REPORT_KEY}:recs`,true);
+    if(res && res.value) recsData=JSON.parse(res.value);
+  }catch(e){ /* no recs saved yet, use defaults */ }
+  renderRecs();
+}
+
+window.addEventListener('DOMContentLoaded',async()=>{
+  showToast('⏳ Cargando informe...','#6b7c8d');
+  initEditableTexts();
+  await Promise.all([ initGridsAndRestore(), restoreTextEdits(), restoreRecs() ]);
+  initCharts();
+  showToast('✓ Listo','#0f8c6e');
+});
+</script>
+</body>
+</html>
